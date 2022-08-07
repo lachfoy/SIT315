@@ -7,7 +7,7 @@
 using namespace std::chrono;
 using namespace std;
 
-#define NUM_THREADS 4
+#define NUM_THREADS 6
 
 struct AddTask
 {
@@ -29,7 +29,7 @@ void* addVector(void* args)
     return nullptr;
 }
 
-void randomVector(int vector[], int size)
+void randomVector(int* vector, int size)
 {
     for (int i = 0; i < size; i++)
     {
@@ -40,19 +40,15 @@ void randomVector(int vector[], int size)
 
 int main()
 {
-    // decompose array into partition
-    // for each partition assign a thread to do the work
-    
     // initialize rand with seed
     srand((unsigned)time(nullptr));
 
-    unsigned long size = 100000000;
+    unsigned long size = 10000000;
     int *v1, *v2, *v3;
 
     // create thread pools
     pthread_t threadPool[NUM_THREADS];
 
-    
     // start timer
     auto start = high_resolution_clock::now();
 
@@ -95,7 +91,6 @@ int main()
 
     // stop the timer
     auto stop = high_resolution_clock::now();
-
 
     auto duration = duration_cast<microseconds>(stop - start);
     cout << "Time taken by function: "
