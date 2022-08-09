@@ -9,7 +9,7 @@
 // C = A * B
 // initialize A and B with random values
 
-#define MATRIX_SIZE 64
+#define MATRIX_SIZE 512
 #define NUM_TESTS 10
 
 // the matrix is a pointer to a pointer...
@@ -46,69 +46,64 @@ int** createRandomMatrix()
     return matrix; 
 }
 
-
 int main()
 {
-    for (int test = 0; test < NUM_TESTS; test++)
+    srand((unsigned)time(nullptr)); // seed the random number generator
+
+    // create the matrices
+    int **a = createRandomMatrix();
+    int **b = createRandomMatrix();
+    int **c = createEmptyMatrix();
+
+    // get current time
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // matrix multiplication
+    for (int i = 0; i < MATRIX_SIZE; i++)
     {
-        srand((unsigned)time(nullptr)); // seed the random number generator
+        for (int j = 0; j < MATRIX_SIZE; j++)
+        {
+            for (int k = 0; k < MATRIX_SIZE; k++)
+            {
+                c[i][j] += a[i][k] * b[k][j];
+            }
+        }
+    }
 
-        // create the matrices
-        int **a = createRandomMatrix();
-        int **b = createRandomMatrix();
-        int **c = createEmptyMatrix();
+    // get current time
+    auto stop = std::chrono::high_resolution_clock::now();
 
-        // get current time
-        auto start = std::chrono::high_resolution_clock::now();
+    // calculate duration
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
-        // matrix multiplication
+    // generate output.txt in a .csv style format
+    std::ofstream output;
+    output.open("output.txt");
+    if (output.is_open())
+    {
         for (int i = 0; i < MATRIX_SIZE; i++)
         {
             for (int j = 0; j < MATRIX_SIZE; j++)
             {
-                for (int k = 0; k < MATRIX_SIZE; k++)
+                std::string numAsStr = std::to_string(c[i][j]);
+                if (j == (MATRIX_SIZE - 1)) // if the last item of a row
                 {
-                    c[i][j] += a[i][k] * b[k][j];
+                    numAsStr += "\n";
                 }
+                else
+                {
+                    numAsStr += ",";
+                }
+
+                output << numAsStr;
             }
         }
 
-        // get current time
-        auto stop = std::chrono::high_resolution_clock::now();
-
-        // calculate duration
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-        std::cout << duration.count() << "\n";
+        output.close();
     }
 
-    // // generate output.txt in a .csv style format
-    // std::ofstream output;
-    // output.open("output.txt");
-    // if (output.is_open())
-    // {
-    //     for (int i = 0; i < MATRIX_SIZE; i++)
-    //     {
-    //         for (int j = 0; j < MATRIX_SIZE; j++)
-    //         {
-    //             std::string numAsStr = std::to_string(c[i][j]);
-    //             if (j == (MATRIX_SIZE - 1)) // if the last item of a row
-    //             {
-    //                 numAsStr += "\n";
-    //             }
-    //             else
-    //             {
-    //                 numAsStr += ",";
-    //             }
-
-    //             output << numAsStr;
-    //         }
-    //     }
-
-    //     output.close();
-    // }
-
-    // std::cout << "Matrix multiplication of random matrix size " << MATRIX_SIZE << "*" << MATRIX_SIZE << "\n"
-    //     << "Time taken: " << duration.count() << " microseconds\n";
+    std::cout << "Matrix multiplication of random matrix size " << MATRIX_SIZE << "x" << MATRIX_SIZE << "\n"
+        << "Time taken: " << duration.count() << " microseconds\n";
 
     return 0;
 }
