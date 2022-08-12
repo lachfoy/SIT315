@@ -48,7 +48,7 @@ int** createRandomMatrix()
 
 int main()
 {
-    srand((unsigned)time(nullptr)); // seed the random number generator
+    srand((unsigned)time(0)); // seed the random number generator
 
     // create the matrices
     int **a = createRandomMatrix();

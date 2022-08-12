@@ -52,7 +52,7 @@ int main()
 {
     omp_set_num_threads(4);
 
-    srand((unsigned)time(nullptr)); // seed the random number generator
+    srand((unsigned)time(0)); // seed the random number generator
 
     // create the matrices
     int **a = createRandomMatrix();
@@ -64,16 +64,16 @@ int main()
 
     // matrix multiplication
     #pragma omp parallel for collapse(3)
-    for (int i = 0; i < MATRIX_SIZE; i++)
-    {
-        for (int j = 0; j < MATRIX_SIZE; j++)
+        for (int i = 0; i < MATRIX_SIZE; i++)
         {
-            for (int k = 0; k < MATRIX_SIZE; k++)
+            for (int j = 0; j < MATRIX_SIZE; j++)
             {
-                c[i][j] += a[i][k] * b[k][j];
+                for (int k = 0; k < MATRIX_SIZE; k++)
+                {
+                    c[i][j] += a[i][k] * b[k][j];
+                }
             }
         }
-    }
 
     // get current time
     auto stop = std::chrono::high_resolution_clock::now();
