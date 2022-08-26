@@ -7,7 +7,7 @@
 using namespace std::chrono;
 using namespace std;
 
-#define NUM_THREADS 6
+#define NUM_THREADS 4
 #define NUM_TESTS 10
 
 void randomVector(int *vector, int size)
@@ -41,7 +41,7 @@ void* addVector(void *args)
 
 int main()
 {
-    unsigned long size = 10000;
+    unsigned long size = 10000000;
     cout << "Test parallel program with size = " << size << endl;
     for (int i = 0; i < NUM_TESTS; i++)
     {

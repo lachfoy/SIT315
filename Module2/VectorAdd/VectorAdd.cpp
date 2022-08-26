@@ -19,7 +19,7 @@ void randomVector(int *vector, int size)
 
 int main()
 {
-    unsigned long size = 10000;
+    unsigned long size = 1000000;
     cout << "Test sequential program with size = " << size << endl;
     for (int i = 0; i < NUM_TESTS; i++)
     {

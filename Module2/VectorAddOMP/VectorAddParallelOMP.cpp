@@ -7,8 +7,8 @@
 using namespace std::chrono;
 using namespace std;
 
-#define NUM_THREADS 6
-#define NUM_TESTS 10
+#define NUM_THREADS 4
+#define NUM_TESTS 1
 
 void randomVector(int *vector, int size)
 {
@@ -21,12 +21,10 @@ void randomVector(int *vector, int size)
 
 int main()
 {
-    omp_set_num_threads(NUM_THREADS);
-
-    unsigned long size = 10000;
+    unsigned long size = 100000;
 
     cout << "Test parallel OMP program with size = " << size << endl;
-    for (int i = 0; i < NUM_TESTS; i++)
+    for (int test = 0; test < NUM_TESTS; test++)
     {
         srand((unsigned)time(0));
 
@@ -44,12 +42,24 @@ int main()
         // start the timer
         auto start = high_resolution_clock::now();
 
+        int total = 0;
+
         // add v1 and v2 and put the result into v3
-        #pragma omp parallel for
+        #pragma omp parallel num_threads(NUM_THREADS) default(none) firstprivate(size) shared(v1, v2, v3, total)
+        {
+            int sum = 0;
+            #pragma omp (private sum) for schedule(static)
             for (int i = 0; i < size; i++)
             {
                 v3[i] = v1[i] + v2[i];
+                sum += v3[i];
             }
+            #pragma omp critical
+            {
+                total += sum;
+            }
+        }
+        #pragma omp barrier
 
         // stop the timer
         auto stop = high_resolution_clock::now();
@@ -57,6 +67,8 @@ int main()
         // calculate time taken by addition
         auto duration = duration_cast<microseconds>(stop - start);
         cout << duration.count() << endl;
+
+        cout << total << endl;
     }
 
     // cout << "Time taken by function: "
