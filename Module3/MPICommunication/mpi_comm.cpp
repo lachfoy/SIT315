@@ -59,4 +59,4 @@ int main(int argc, char** argv)
 
     // Finalize the MPI environment
     MPI_Finalize();
-}
+} // mpic++ mpi_comm.cpp -o mpi_comm && mpirun -np 4 -hostfile ./cluster ./mpi_comm

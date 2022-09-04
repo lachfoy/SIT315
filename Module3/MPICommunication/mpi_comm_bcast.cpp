@@ -28,4 +28,4 @@ int main(int argc, char** argv)
 
     // Finalize the MPI environment
     MPI_Finalize();
-}
+} // mpic++ mpi_comm_bcast.cpp -o mpi_comm_bcast && mpirun -np 4 -hostfile ./cluster ./mpi_comm_bcast

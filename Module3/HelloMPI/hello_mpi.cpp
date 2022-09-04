@@ -22,4 +22,4 @@ int main(int argc, char** argv)
 
     // Finalize the MPI environment
     MPI_Finalize();
-}
+} // mpic++ hello_mpi.cpp -o hello_mpi && mpirun -np 4 -hostfile ./cluster ./hello_mpi
