@@ -4,7 +4,6 @@
 #include <time.h>
 #include <chrono>
 #include <cstdlib>
-#include <omp.h>
 
 // A, B and C are all N*N
 // C = A * B
@@ -16,7 +15,7 @@
 // the matrix is a pointer to a pointer...
 // where the first pointer is an array of pointers, which point to another array
 // therefore building a 2d array
-int** createEmptyMatrix()
+int** CreateEmptyMatrix()
 {
     int** matrix = new int*[MATRIX_SIZE];
     for (int row = 0; row < MATRIX_SIZE; row++) // fill down the rows first
@@ -32,7 +31,7 @@ int** createEmptyMatrix()
 }
 
 // create an matrix in the same way but fill in a random value
-int** createRandomMatrix()
+int** CreateRandomMatrix()
 {
     int** matrix = new int*[MATRIX_SIZE];
     for (int row = 0; row < MATRIX_SIZE; row++) // fill down the rows first
@@ -47,33 +46,29 @@ int** createRandomMatrix()
     return matrix; 
 }
 
-
 int main()
 {
-    omp_set_num_threads(4);
-
     srand((unsigned)time(0)); // seed the random number generator
 
     // create the matrices
-    int **a = createRandomMatrix();
-    int **b = createRandomMatrix();
-    int **c = createEmptyMatrix();
+    int **a = CreateRandomMatrix();
+    int **b = CreateRandomMatrix();
+    int **c = CreateEmptyMatrix();
 
     // get current time
     auto start = std::chrono::high_resolution_clock::now();
 
     // matrix multiplication
-    #pragma omp parallel for collapse(3)
-        for (int i = 0; i < MATRIX_SIZE; i++)
+    for (int i = 0; i < MATRIX_SIZE; i++)
+    {
+        for (int j = 0; j < MATRIX_SIZE; j++)
         {
-            for (int j = 0; j < MATRIX_SIZE; j++)
+            for (int k = 0; k < MATRIX_SIZE; k++)
             {
-                for (int k = 0; k < MATRIX_SIZE; k++)
-                {
-                    c[i][j] += a[i][k] * b[k][j];
-                }
+                c[i][j] += a[i][k] * b[k][j];
             }
         }
+    }
 
     // get current time
     auto stop = std::chrono::high_resolution_clock::now();
@@ -90,17 +85,17 @@ int main()
         {
             for (int j = 0; j < MATRIX_SIZE; j++)
             {
-                std::string numAsStr = std::to_string(c[i][j]);
+                std::string num_as_str = std::to_string(c[i][j]);
                 if (j == (MATRIX_SIZE - 1)) // if the last item of a row
                 {
-                    numAsStr += "\n";
+                    num_as_str += "\n";
                 }
                 else
                 {
-                    numAsStr += ",";
+                    num_as_str += ",";
                 }
 
-                output << numAsStr;
+                output << num_as_str;
             }
         }
 
@@ -113,4 +108,4 @@ int main()
     return 0;
 }
 
-// g++ MatrixMultiplicationParallelOMP.cpp -o MatrixMultiplicationParallelOMP -fopenmp && ./MatrixMultiplicationParallelOMP
+// g++ matmul_seq.cpp -o matmul_seq && ./matmul_seq

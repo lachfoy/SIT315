@@ -16,7 +16,7 @@
 // the matrix is a pointer to a pointer...
 // where the first pointer is an array of pointers, which point to another array
 // therefore building a 2d array
-int** createEmptyMatrix()
+int** CreateEmptyMatrix()
 {
     int** matrix = new int*[MATRIX_SIZE];
     for (int row = 0; row < MATRIX_SIZE; row++) // fill down the rows first
@@ -32,7 +32,7 @@ int** createEmptyMatrix()
 }
 
 // create an matrix in the same way but fill in a random value
-int** createRandomMatrix()
+int** CreateRandomMatrix()
 {
     int** matrix = new int*[MATRIX_SIZE];
     for (int row = 0; row < MATRIX_SIZE; row++) // fill down the rows first
@@ -55,7 +55,7 @@ struct MultiplyTask
     int **c;
 };
 
-void* multiplyMatrix(void* args)
+void* MultiplyMatrix(void* args)
 {
     MultiplyTask *multiplyTask = (MultiplyTask*)args;
 
@@ -78,9 +78,9 @@ int main()
     srand((unsigned)time(0)); // seed the random number generator
 
     // create the matrices
-    int **a = createRandomMatrix();
-    int **b = createRandomMatrix();
-    int **c = createEmptyMatrix();
+    int **a = CreateRandomMatrix();
+    int **b = CreateRandomMatrix();
+    int **c = CreateEmptyMatrix();
 
     // get current time
     auto start = std::chrono::high_resolution_clock::now();
@@ -125,7 +125,7 @@ int main()
     pthread_t threads[4];
     for (int i = 0; i < 4; i++)
     {
-        pthread_create(&threads[i], NULL, multiplyMatrix, (void*)tasks[i]);
+        pthread_create(&threads[i], NULL, MultiplyMatrix, (void*)tasks[i]);
     }
 
     // join the threads when they are done with their work
@@ -149,17 +149,17 @@ int main()
         {
             for (int j = 0; j < MATRIX_SIZE; j++)
             {
-                std::string numAsStr = std::to_string(c[i][j]);
+                std::string num_as_str = std::to_string(c[i][j]);
                 if (j == (MATRIX_SIZE - 1)) // if the last item of a row
                 {
-                    numAsStr += "\n";
+                    num_as_str += "\n";
                 }
                 else
                 {
-                    numAsStr += ",";
+                    num_as_str += ",";
                 }
 
-                output << numAsStr;
+                output << num_as_str;
             }
         }
 
@@ -172,4 +172,4 @@ int main()
     return 0;
 }
 
-// g++ MatrixMultiplicationParallel.cpp -o MatrixMultiplicationParallel -lpthread && ./MatrixMultiplicationParallel
+// g++ matmul_pthread.cpp -o matmul_pthread -lpthread && ./matmul_pthread

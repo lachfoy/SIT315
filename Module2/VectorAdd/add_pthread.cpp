@@ -10,7 +10,7 @@ using namespace std;
 #define NUM_THREADS 4
 #define NUM_TESTS 10
 
-void randomVector(int *vector, int size)
+void RandomVector(int *vector, int size)
 {
     for (int i = 0; i < size; i++)
     {
@@ -28,7 +28,7 @@ struct AddTask
     int end; // end point of partition
 };
 
-void* addVector(void *args)
+void* AddVector(void *args)
 {
     AddTask *task = (AddTask*)args;
     for (int i = task->start; i < task->end; i++)
@@ -55,17 +55,17 @@ int main()
         v3 = (int*)malloc(size * sizeof(int));
 
         // randomize v1 and v2
-        randomVector(v1, size);
-        randomVector(v2, size);
+        RandomVector(v1, size);
+        RandomVector(v2, size);
 
         // start the timer
         auto start = high_resolution_clock::now();
 
         // create thread pools
-        pthread_t threadPool[NUM_THREADS];
+        pthread_t thread_pool[NUM_THREADS];
 
         // partition the vectors according to the number of threads
-        int partitionSize = size / NUM_THREADS;
+        int partition_size = size / NUM_THREADS;
 
         // allocate the first half of available threads to the first vector
         for(int i = 0; i < NUM_THREADS; i++)
@@ -79,17 +79,17 @@ int main()
             task->v3 = v3;
 
             // pass in the partition start and end point
-            task->start = i * partitionSize;
-            task->end = task->start + partitionSize - 1;
+            task->start = i * partition_size;
+            task->end = task->start + partition_size - 1;
 
             // create thread
-            pthread_create(&threadPool[i], NULL, addVector, (void*)task);
+            pthread_create(&thread_pool[i], NULL, AddVector, (void*)task);
         }
 
         // join back the threads into the main thread
         for (int i = 0; i < NUM_THREADS; i++)
         {
-            pthread_join(threadPool[i], NULL);
+            pthread_join(thread_pool[i], NULL);
         }
 
         // stop the timer
@@ -106,4 +106,4 @@ int main()
     return 0;
 }
 
-// g++ VectorAddParallel.cpp -o VectorAddParallel -lpthread && ./VectorAddParallel
+// g++ add_pthread.cpp -o add_pthread -lpthread && ./add_pthread

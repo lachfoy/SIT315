@@ -8,7 +8,7 @@ using namespace std;
 
 #define NUM_TESTS 10
 
-void randomVector(int *vector, int size)
+void RandomVector(int *vector, int size)
 {
     for (int i = 0; i < size; i++)
     {
@@ -33,8 +33,8 @@ int main()
         v3 = (int*)malloc(size * sizeof(int));
 
         // assign random values to v1 and v2
-        randomVector(v1, size);
-        randomVector(v2, size);
+        RandomVector(v1, size);
+        RandomVector(v2, size);
 
         // start the timer
         auto start = high_resolution_clock::now();

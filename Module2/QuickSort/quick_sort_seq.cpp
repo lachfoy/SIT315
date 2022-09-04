@@ -86,4 +86,4 @@ int main()
     return 0;
 }
 
-// g++ quick_sort_seq.cpp -o test && ./test
+// g++ quick_sort_seq.cpp -o quick_sort_seq && ./quick_sort_seq
