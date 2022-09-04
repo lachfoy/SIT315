@@ -1,10 +1,7 @@
-#include <cstdio>
-#include <cstdlib> // malloc, rand, srand
+#include <cstdio> // printf
+#include <cstdlib> // rand, srand
 #include <time.h> // time
-#include <chrono>
 #include <mpi.h>
-
-using namespace std::chrono;
 
 void RandomVector(int *vector, int size)
 {
@@ -17,14 +14,11 @@ void RandomVector(int *vector, int size)
 
 int main(int argc, char** argv)
 {
-    // Initialize the MPI environment
-    MPI_Init(&argc, &argv);
-
     // init rand
     srand((unsigned)time(0));
 
     unsigned long size = 10000000;
-    printf("test program with size = %lu\n", size);
+    printf("size = %lu\n", size);
 
     // dynamically allocate memory for vectors
     int *v1 = new int[size];
@@ -35,16 +29,17 @@ int main(int argc, char** argv)
     RandomVector(v1, size);
     RandomVector(v2, size);
 
-    // start the timer
-    auto start = high_resolution_clock::now();
+    // initialize the MPI environment
+    MPI_Init(&argc, &argv);
 
-    // Get the rank
-    int rank;
+    // get the rank, tasks
+    int rank, tasks;
     const int root = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &tasks);
 
     // get the partition size by dividing the size by the number of tasks
-    const int partition_size = size / rank;
+    int partition_size = size / tasks;
 
     // scatter each array into temporary storage    
     int *tmp1 = new int[partition_size];
@@ -59,18 +54,13 @@ int main(int argc, char** argv)
     }
 
     // redistribute the resulting sums into v3
-    MPI_Gather(v3, partition_size, MPI_INT, tmp1, partition_size, MPI_INT, root, MPI_COMM_WORLD);
-
-    // stop the timer
-    auto stop = high_resolution_clock::now();
-
-    // calculate time taken by addition
-    auto duration = duration_cast<microseconds>(stop - start);
-    printf("time taken by add: %li microseconds\n", duration.count());
+    MPI_Gather(tmp1, partition_size, MPI_INT, v3, partition_size, MPI_INT, root, MPI_COMM_WORLD);
 
     // clean up our memory
     delete[] v1, v2, v3, tmp1, tmp2;
 
     // finalize the MPI environment
     MPI_Finalize();
+    
+    return 0;
 } // mpic++ add_mpi.cpp -o add_mpi && mpirun -np 4 -hostfile ./cluster ./add_mpi
