@@ -1,6 +1,7 @@
-#include <cstdio> // printf
-#include <cstdlib> // rand, srand
+#include <cstdio>
+#include <cstdlib> // malloc, rand, srand
 #include <time.h> // time
+
 #include <mpi.h>
 
 void RandomVector(int *vector, int size)
@@ -18,7 +19,6 @@ int main(int argc, char** argv)
     srand((unsigned)time(0));
 
     unsigned long size = 10000000;
-    printf("size = %lu\n", size);
 
     // dynamically allocate memory for vectors
     int *v1 = new int[size];
@@ -29,10 +29,10 @@ int main(int argc, char** argv)
     RandomVector(v1, size);
     RandomVector(v2, size);
 
-    // initialize the MPI environment
+    // Initialize the MPI environment
     MPI_Init(&argc, &argv);
 
-    // get the rank, tasks
+    // Get the rank
     int rank, tasks;
     const int root = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
