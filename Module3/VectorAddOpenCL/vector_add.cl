@@ -1,4 +1,4 @@
-__kernel void square_magnitude(const int size, __global int* v)
+__kernel void vector_add(const int size, __global int* v1, __global int* v2, __global int* v3)
 {
     // thread identifiers
     const int globalIndex = get_global_id(0);   
@@ -6,5 +6,5 @@ __kernel void square_magnitude(const int size, __global int* v)
     // uncomment to see the index each PE works on
     printf("Kernel process index :(%d)\n ", globalIndex);
 
-    v[globalIndex] = v[globalIndex] * v[globalIndex];
+    v3[globalIndex] = v1[globalIndex] + v2[globalIndex];
 }
