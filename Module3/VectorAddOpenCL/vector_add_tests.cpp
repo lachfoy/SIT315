@@ -1,13 +1,21 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <CL/cl.h>
+#include <chrono>
+#include <time.h> // time
+
+using namespace std::chrono;
 
 #define PRINT 1
 
 int SZ = 8;
-int *v;
+int *v1;
+int *v2;
+int *v3;
 
-cl_mem bufV; // stores a collection of processing elements
+cl_mem bufV1; // stores a collection of processing elements
+cl_mem bufV2; // stores a collection of processing elements
+cl_mem bufV3; // stores a collection of processing elements
 cl_device_id device_id; // id of device
 cl_context context; // the context is an abstraction layer for interacting with the platform
 cl_program program; // kernel program
@@ -37,7 +45,8 @@ void CopyKernelArgs();
 // deallocates all memory used
 void CleanUp();
 
-void init(int *&A, int size)
+// originall called "init()", renamed to indicate the purpose of the function better
+void VectorPopulateRandom(int *&A, int size)
 {
     A = (int *)malloc(sizeof(int) * size);
     for (long i = 0; i < size; i++) {
@@ -45,6 +54,7 @@ void init(int *&A, int size)
     }
 }
 
+// originall called "print()", renamed to be a bit clearer
 void PrintVector(int *A, int size)
 {
     if (PRINT == 0) {
@@ -74,29 +84,53 @@ int main(int argc, char **argv)
         SZ = atoi(argv[1]);
     }
 
-    init(v, SZ);
+    printf("size=%i\n", SZ);
 
-    size_t global[1] = { (size_t)SZ }; // SZ number elements of a single dimension
+    // init rand
+    srand((unsigned)time(0));
 
-    PrintVector(v, SZ); // initial vector
+    SetupOpenCLDeviceContextQueueKernel((char *)"./vector_add.cl", (char *)"AddVector");
 
-    SetupOpenCLDeviceContextQueueKernel((char *)"./vector_ops.cl", (char *)"square_magnitude");
-    
-    SetupKernelMemory();
-    CopyKernelArgs();
+    const int num_tests = 10;
+    for (int i = 0; i < num_tests; i++)
+    {
+        VectorPopulateRandom(v1, SZ);
+        VectorPopulateRandom(v2, SZ);
+        VectorPopulateRandom(v3, SZ);
 
-    // enqueues a command to execute a kernel on a device, sending the data to the buffer
-    // args are command_queue, kernel, work_dim (dimensions), global_work_offset, global_work_size, local_work_size, num_events_in_wait_list, event_wait_list, event
-    clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global, NULL, 0, NULL, &event);
+        size_t global[1] = { (size_t)SZ }; // SZ number elements of a single dimension
 
-    clWaitForEvents(1, &event);
+        // PrintVector(v1, SZ); // initial vector 1
+        // PrintVector(v2, SZ); // initial vector 2
 
-    // reads from the buffer
-    // args are command_queue, buffer, blocking_read, offset, size, pointer, num_events_in_wait_list, event_wait_list, event
-    clEnqueueReadBuffer(queue, bufV, CL_TRUE, 0, SZ * sizeof(int), &v[0], 0, NULL, NULL);
+        // start the timer
+        auto start = high_resolution_clock::now();
+        
+        SetupKernelMemory();
+        CopyKernelArgs();
 
-    // result vector
-    PrintVector(v, SZ);
+        // enqueues a command to execute a kernel on a device, sending the data to the buffer
+        // args are command_queue, kernel, work_dim (dimensions), global_work_offset, global_work_size, local_work_size, num_events_in_wait_list, event_wait_list, event
+        clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global, NULL, 0, NULL, &event);
+
+        clWaitForEvents(1, &event);
+
+        // reads from the buffer
+        // args are command_queue, buffer, blocking_read, offset, size, pointer, num_events_in_wait_list, event_wait_list, event
+        clEnqueueReadBuffer(queue, bufV1, CL_TRUE, 0, SZ * sizeof(int), &v1[0], 0, NULL, NULL);
+        clEnqueueReadBuffer(queue, bufV2, CL_TRUE, 0, SZ * sizeof(int), &v2[0], 0, NULL, NULL);
+        clEnqueueReadBuffer(queue, bufV3, CL_TRUE, 0, SZ * sizeof(int), &v3[0], 0, NULL, NULL);
+
+        // stop the timer
+        auto stop = high_resolution_clock::now();
+
+        // calculate time taken by addition
+        auto duration = duration_cast<microseconds>(stop - start);
+        printf("%li\n", duration.count());
+
+        // result vector
+        // PrintVector(v3, SZ);
+    }
 
     // frees memory for device, kernel, queue, etc.
     CleanUp();
@@ -226,10 +260,14 @@ void SetupKernelMemory()
     // creates a buffer object
     // args are context, flags, size, host_prt, errcode_ret
     // the second parameter of the clCreateBuffer is cl_mem_flags flags. Check the OpenCL documention to find out what is it's purpose and read the List of supported memory flag values
-    bufV = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * sizeof(int), NULL, NULL);
+    bufV1 = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * sizeof(int), NULL, NULL);
+    bufV2 = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * sizeof(int), NULL, NULL);
+    bufV3 = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * sizeof(int), NULL, NULL);
 
     // copy vectors to the buffer
-    clEnqueueWriteBuffer(queue, bufV, CL_TRUE, 0, SZ * sizeof(int), &v[0], 0, NULL, NULL);
+    clEnqueueWriteBuffer(queue, bufV1, CL_TRUE, 0, SZ * sizeof(int), &v1[0], 0, NULL, NULL);
+    clEnqueueWriteBuffer(queue, bufV2, CL_TRUE, 0, SZ * sizeof(int), &v2[0], 0, NULL, NULL);
+    clEnqueueWriteBuffer(queue, bufV3, CL_TRUE, 0, SZ * sizeof(int), &v3[0], 0, NULL, NULL);
 }
 
 void CopyKernelArgs()
@@ -237,7 +275,9 @@ void CopyKernelArgs()
     // sets a value for the specified kernel's arg
     // args are kenel, arg_index, arg_size, arg_value
     clSetKernelArg(kernel, 0, sizeof(int), (void *)&SZ);
-    clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&bufV);
+    clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&bufV1);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&bufV2);
+    clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&bufV3);
 
     if (err < 0) {
         perror("Couldn't create a kernel argument");
@@ -249,12 +289,18 @@ void CopyKernelArgs()
 void CleanUp()
 {
     // free the buffers
-    clReleaseMemObject(bufV);
+    clReleaseMemObject(bufV1);
+    clReleaseMemObject(bufV2);
+    clReleaseMemObject(bufV3);
 
     // free opencl objects
     clReleaseKernel(kernel);
     clReleaseCommandQueue(queue);
     clReleaseProgram(program);
     clReleaseContext(context);
-    free(v);
+
+    // free the vectors
+    free(v1);
+    free(v2);
+    free(v3);
 }

@@ -1,6 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <CL/cl.h>
+#include <time.h>
 
 #define PRINT 1
 
@@ -24,22 +25,22 @@ cl_event event = NULL;
 int err;
 
 // set up a new device (either GPU or CPU is no GPU is available)
-cl_device_id create_device();
+cl_device_id CreateDevice();
 
 // sets up a device, a context, a command queue and the program kernel
-void setup_openCL_device_context_queue_kernel(char *filename, char *kernelname);
+void SetupOpenCLDeviceContextQueueKernel(char *filename, char *kernelname);
 
 // compiles the program for a context
-cl_program build_program(cl_context ctx, cl_device_id dev, const char *filename);
+cl_program BuildProgram(cl_context ctx, cl_device_id dev, const char *filename);
 
 // allocates buffer for kernel memory
-void setup_kernel_memory();
+void SetupKernelMemory();
 
 // copy the arguments to the kernel function
-void copy_kernel_args();
+void CopyKernelArgs();
 
 // deallocates all memory used
-void free_memory();
+void CleanUp();
 
 // originall called "init()", renamed to indicate the purpose of the function better
 void VectorPopulateRandom(int *&A, int size)
@@ -80,6 +81,9 @@ int main(int argc, char **argv)
         SZ = atoi(argv[1]);
     }
 
+    // init rand
+    srand((unsigned)time(0));
+
     VectorPopulateRandom(v1, SZ);
     VectorPopulateRandom(v2, SZ);
     VectorPopulateRandom(v3, SZ);
@@ -89,10 +93,10 @@ int main(int argc, char **argv)
     PrintVector(v1, SZ); // initial vector 1
     PrintVector(v2, SZ); // initial vector 2
 
-    setup_openCL_device_context_queue_kernel((char *)"./vector_add.cl", (char *)"vector_add");
+    SetupOpenCLDeviceContextQueueKernel((char *)"./vector_add.cl", (char *)"AddVector");
     
-    setup_kernel_memory();
-    copy_kernel_args();
+    SetupKernelMemory();
+    CopyKernelArgs();
 
     // enqueues a command to execute a kernel on a device, sending the data to the buffer
     // args are command_queue, kernel, work_dim (dimensions), global_work_offset, global_work_size, local_work_size, num_events_in_wait_list, event_wait_list, event
@@ -110,10 +114,10 @@ int main(int argc, char **argv)
     PrintVector(v3, SZ);
 
     // frees memory for device, kernel, queue, etc.
-    free_memory();
+    CleanUp();
 }
 
-cl_device_id create_device()
+cl_device_id CreateDevice()
 {
     cl_platform_id platform;
     cl_device_id dev;
@@ -145,9 +149,9 @@ cl_device_id create_device()
     return dev;
 }
 
-void setup_openCL_device_context_queue_kernel(char *filename, char *kernelname)
+void SetupOpenCLDeviceContextQueueKernel(char *filename, char *kernelname)
 {
-    device_id = create_device();
+    device_id = CreateDevice();
     cl_int err;
 
     // ToDo: Add comment (what is the purpose of clCreateBuffer function?)
@@ -158,7 +162,7 @@ void setup_openCL_device_context_queue_kernel(char *filename, char *kernelname)
         exit(1);
     }
 
-    program = build_program(context, device_id, filename);
+    program = BuildProgram(context, device_id, filename);
 
     // ToDo: Add comment (what is the purpose of clCreateCommandQueueWithProperties function?)
     queue = clCreateCommandQueueWithProperties(context, device_id, 0, &err);
@@ -176,7 +180,7 @@ void setup_openCL_device_context_queue_kernel(char *filename, char *kernelname)
     };
 }
 
-cl_program build_program(cl_context ctx, cl_device_id dev, const char *filename)
+cl_program BuildProgram(cl_context ctx, cl_device_id dev, const char *filename)
 {
     cl_program program;
     FILE *program_handle;
@@ -232,7 +236,7 @@ cl_program build_program(cl_context ctx, cl_device_id dev, const char *filename)
     return program;
 }
 
-void setup_kernel_memory()
+void SetupKernelMemory()
 {
     // creates a buffer object
     // args are context, flags, size, host_prt, errcode_ret
@@ -247,7 +251,7 @@ void setup_kernel_memory()
     clEnqueueWriteBuffer(queue, bufV3, CL_TRUE, 0, SZ * sizeof(int), &v3[0], 0, NULL, NULL);
 }
 
-void copy_kernel_args()
+void CopyKernelArgs()
 {
     // sets a value for the specified kernel's arg
     // args are kenel, arg_index, arg_size, arg_value
@@ -263,7 +267,7 @@ void copy_kernel_args()
     }
 }
 
-void free_memory()
+void CleanUp()
 {
     // free the buffers
     clReleaseMemObject(bufV1);
