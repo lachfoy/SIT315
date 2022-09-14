@@ -1,10 +1,15 @@
+// g++ quick_sort_parallel_tests.cpp -o parallel_tests -lpthread
+// ./parallel_tests 1000
+
 #include <iostream>
 #include <string>
 #include <cstdlib> // rand, srand
 #include <ctime> // time
 #include <pthread.h>
+#include <chrono>
 
 using namespace std;
+using namespace chrono;
 
 struct QuickSortInfo
 {
@@ -32,8 +37,6 @@ void PrintArray(const int* array, const int array_size)
     }
     cout << to_string(array[array_size - 1]) << "]\n"; // print the last item
 }
-
-
 
 int Partition(int* array, const int low, const int high)
 {
@@ -99,36 +102,58 @@ void* QuickSort(void* args)
     }
 }
 
-int main() 
+int main(int argc, char *argv[])
 {
     // initialize rand with seed
     srand(unsigned(time(0)));
 
-    const int array_size = 5;
+    const int array_size = atoi(argv[1]);
+    cout << "size=" << array_size << endl;
 
-    // create a randomized array
-    int* array = RandomArray(array_size);
+    const int num_tests = 10;
+    for (int i = 0; i < num_tests; i++) {
+        // create a randomized array
+        int* array = RandomArray(array_size);
 
-    cout << "before sort: ";
-    PrintArray(array, array_size);
+        // cout << "before sort: ";
+        // PrintArray(array, array_size);
 
-    // sort the array
-    QuickSortInfo info;
-    info.array = array;
-    info.low = 0;
-    info.high = array_size - 1;
+        // sort the array
+        QuickSortInfo info;
+        info.array = array;
+        info.low = 0;
+        info.high = array_size - 1;
 
-    pthread_t thread;
-    pthread_create(&thread, NULL, QuickSort, &info);
-    pthread_join(thread, NULL);
-    
-    cout << "after sort: ";
-    PrintArray(array, array_size);
+        
+
+        pthread_t thread;
+
+        // start the timer
+        auto start = high_resolution_clock::now();
+        pthread_create(&thread, NULL, QuickSort, &info);
+        pthread_join(thread, NULL); // joined once work is finished
+        // stop the timer
+        auto stop = high_resolution_clock::now();
+
+        // calculate time taken by addition
+        auto duration = duration_cast<microseconds>(stop - start);
+        cout << duration.count() << endl;
+
+
+        
+
+        
+        
+        // cout << "after sort: ";
+        // PrintArray(array, array_size);
+
+        // free memory
+        delete[] array;
+    }
 
     pthread_exit(NULL);
 
-    // free memory
-    delete[] array;
+    
 
     return 0;
 }

@@ -1,9 +1,14 @@
+// g++ quick_sort_seq_tests.cpp -o seq_tests
+// ./seq_tests 1000
+
 #include <iostream>
 #include <string>
 #include <cstdlib> // rand, srand
 #include <ctime> // time
+#include <chrono>
 
 using namespace std;
+using namespace chrono;
 
 int* RandomArray(const int array_size)
 {
@@ -57,27 +62,41 @@ void QuickSort(int* array, const int low, const int high)
     QuickSort(array, p + 1, high); // right side
 }
 
-int main() 
+int main(int argc, char *argv[]) 
 {
     // initialize rand with seed
     srand(unsigned(time(0)));
 
-    const int array_size = 5;
+    const int array_size = atoi(argv[1]);
+    cout << "size=" << array_size << endl;
 
-    // create a randomized array
-    int* array = RandomArray(array_size);
+    const int num_tests = 10;
+    for (int i = 0; i < num_tests; i++) {
+        // create a randomized array
+        int* array = RandomArray(array_size);
 
-    cout << "before sort: ";
-    PrintArray(array, array_size);
+        // cout << "before sort: ";
+        // PrintArray(array, array_size);
 
-    // sort the array
-    QuickSort(array, 0, array_size - 1);
-    
-    cout << "after sort: ";
-    PrintArray(array, array_size);
+        // start the timer
+        auto start = high_resolution_clock::now();
 
-    // free memory
-    delete[] array;
+        // sort the array
+        QuickSort(array, 0, array_size - 1);
+
+        // stop the timer
+        auto stop = high_resolution_clock::now();
+
+        // calculate time taken by addition
+        auto duration = duration_cast<microseconds>(stop - start);
+        cout << duration.count() << endl;
+        
+        // cout << "after sort: ";
+        // PrintArray(array, array_size);
+
+        // free memory
+        delete[] array;
+    }
 
     return 0;
 }
