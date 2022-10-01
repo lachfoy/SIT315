@@ -59,7 +59,7 @@ void QuickSort(int* array, const int low, const int high)
     int p = Partition(array, low, high);
 
     // recurse
-    #pragma omp parallel sections
+    #pragma omp parallel sections shared(p, array)
     {
     #pragma omp section
         QuickSort(array, low, p - 1); // left side
