@@ -10,26 +10,18 @@
 // C = A * B
 // initialize A and B with random values
 
-int* CreateZeroMatrix(const int matrixSize)
+void FillZeroMatrix(int* matrix, const int matrixSize)
 {
-    int* matrix = new int[matrixSize * matrixSize];
-
     for (int i = 0; i < matrixSize * matrixSize; i++) {
         matrix[i] = 0;
     }
-
-    return matrix; 
 }
 
-int* CreateRandomMatrix(const int matrixSize)
+void FillRandomMatrix(int* matrix, const int matrixSize)
 {
-    int* matrix = new int[matrixSize * matrixSize];
-
     for (int i = 0; i < matrixSize * matrixSize; i++) {
         matrix[i] = rand() % 10 + 1; // 1 to 10
     }
-
-    return matrix; 
 }
 
 void PrintMatrix(int* matrix, const int matrixSize)
@@ -81,29 +73,31 @@ int main(int argc, char** argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    const int matrixSize = 4;
+    const int matrixSize = 512;
 
     // create the matrices
-    int *a, *b, *c;
-    a = CreateZeroMatrix(matrixSize);
-    b = CreateZeroMatrix(matrixSize);
+    int *a = new int[matrixSize * matrixSize];
+    int *b = new int[matrixSize * matrixSize];
+    int *c = new int[matrixSize * matrixSize];
+
     if (rank == root) {
-        a = CreateRandomMatrix(matrixSize);
-        b = CreateRandomMatrix(matrixSize);
-        c = CreateZeroMatrix(matrixSize);
+        FillRandomMatrix(a, matrixSize);
+        FillRandomMatrix(b, matrixSize);
     }
+
+    const int partitionSize = matrixSize * matrixSize / size;
     
     // scatter rows of matrix a to all workers into tmp1 (worker for each row)
-    int *tmp1 = new int[matrixSize];
-    MPI_Scatter(a, matrixSize * matrixSize / size, MPI_INT, tmp1, matrixSize * matrixSize / size, MPI_INT, root, MPI_COMM_WORLD);
+    int *tmp1 = new int[partitionSize];
+    MPI_Scatter(a, partitionSize, MPI_INT, tmp1, partitionSize, MPI_INT, root, MPI_COMM_WORLD);
 
     // copy matrix b to each worker
     // necessary because only the root node randomizes the matrices
     MPI_Bcast(b, matrixSize * matrixSize, MPI_INT, root, MPI_COMM_WORLD);
 
     // matrix multiplication by row, store the result in tmp2
-    int *tmp2 = new int[matrixSize];
-    for (int i = 0; i < matrixSize; i++) {
+    int *tmp2 = new int[partitionSize];
+    for (int i = 0; i < partitionSize; i++) {
         int sum = 0;
         for (int j = 0; j < matrixSize; j++) {
             sum += tmp1[j] * b[i + (j * matrixSize)];
@@ -112,7 +106,7 @@ int main(int argc, char** argv)
     }
 
     // gather the result back into c
-    MPI_Gather(tmp2, matrixSize * matrixSize / size, MPI_INT, c, matrixSize * matrixSize / size, MPI_INT, root, MPI_COMM_WORLD);
+    MPI_Gather(tmp2, partitionSize, MPI_INT, c, partitionSize, MPI_INT, root, MPI_COMM_WORLD);
 
     // output the final matrix to output.txt
     if (rank == root) {
@@ -128,4 +122,4 @@ int main(int argc, char** argv)
     return 0;
 }
 
-// mpic++ MatMulMPI.cpp -o MatMulMPI && mpirun -np 4 -hostfile ./cluster ./MatMulMPI
+// mpic++ matrix_mpi.cpp -o matrix_mpi && mpirun -np 4 -hostfile ./cluster ./matrix_mpi
